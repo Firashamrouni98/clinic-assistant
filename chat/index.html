@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinique Al Amal — Assistant IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --teal-50: #E1F5EE;
+    --teal-100: #9FE1CB;
+    --teal-500: #1D9E75;
+    --teal-700: #0F6E56;
+    --teal-900: #04342C;
+    --gray-50: #F8F9FA;
+    --gray-100: #F1EFE8;
+    --gray-200: #E5E4DC;
+    --gray-400: #888780;
+    --gray-600: #5F5E5A;
+    --gray-900: #1A1A18;
+    --white: #FFFFFF;
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-pill: 50px;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #F0F4F2;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  /* CONFIG: change this to your Railway URL after deployment */
+  /* e.g. const API_URL = 'https://your-app.up.railway.app/chat'; */
+
+  .chat-shell {
+    width: 420px;
+    max-width: 100%;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-200);
+    display: flex;
+    flex-direction: column;
+    height: 680px;
+    overflow: hidden;
+    box-shadow: 0 4px 32px rgba(15, 110, 86, 0.08), 0 1px 4px rgba(0,0,0,0.06);
+  }
+
+  /* Header */
+  .chat-header {
+    background: var(--teal-700);
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+  }
+
+  .clinic-logo {
+    width: 42px;
+    height: 42px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .clinic-logo svg {
+    width: 22px;
+    height: 22px;
+    fill: white;
+  }
+
+  .header-info { flex: 1; }
+
+  .clinic-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    letter-spacing: 0.01em;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .clinic-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    background: #5DCAA5;
+    border-radius: 50%;
+  }
+
+  .status-text {
+    font-size: 12px;
+    color: rgba(255,255,255,0.75);
+  }
+
+  /* Messages area */
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    scroll-behavior: smooth;
+  }
+
+  .chat-messages::-webkit-scrollbar { width: 4px; }
+  .chat-messages::-webkit-scrollbar-track { background: transparent; }
+  .chat-messages::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 4px; }
+
+  /* Welcome card */
+  .welcome-card {
+    background: var(--teal-50);
+    border: 1px solid var(--teal-100);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 4px;
+  }
+
+  .welcome-card p {
+    font-size: 13.5px;
+    color: var(--teal-900);
+    line-height: 1.6;
+  }
+
+  .welcome-card strong {
+    font-weight: 600;
+  }
+
+  .quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 12px;
+  }
+
+  .quick-btn {
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    background: white;
+    border: 1px solid var(--teal-100);
+    color: var(--teal-700);
+    border-radius: var(--radius-pill);
+    padding: 6px 13px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .quick-btn:hover {
+    background: var(--teal-50);
+    border-color: var(--teal-500);
+  }
+
+  /* Message bubbles */
+  .msg-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    animation: fadeUp 0.2s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg-row.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .avatar.bot {
+    background: var(--teal-700);
+    color: white;
+  }
+
+  .avatar.user-av {
+    background: var(--gray-100);
+    color: var(--gray-600);
+  }
+
+  .bubble {
+    max-width: 78%;
+    padding: 11px 15px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    line-height: 1.55;
+    word-wrap: break-word;
+  }
+
+  .bubble.bot {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    color: var(--gray-900);
+    border-bottom-left-radius: 4px;
+  }
+
+  .bubble.user {
+    background: var(--teal-700);
+    color: white;
+    border-bottom-right-radius: 4px;
+  }
+
+  .msg-time {
+    font-size: 11px;
+    color: var(--gray-400);
+    margin-top: 4px;
+    padding: 0 4px;
+  }
+
+  .msg-row.user .msg-time { text-align: right; }
+
+  .msg-wrapper { display: flex; flex-direction: column; max-width: 78%; }
+  .msg-row.user .msg-wrapper { align-items: flex-end; }
+
+  /* Typing indicator */
+  .typing-indicator {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  .typing-bubble {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    border-bottom-left-radius: 4px;
+    padding: 12px 16px;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    background: var(--teal-500);
+    border-radius: 50%;
+    animation: bounce 1.3s ease infinite;
+    opacity: 0.6;
+  }
+
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.6; }
+    30%            { transform: translateY(-5px); opacity: 1; }
+  }
+
+  /* Input bar */
+  .chat-input-area {
+    padding: 14px 16px;
+    border-top: 1px solid var(--gray-200);
+    background: var(--white);
+    flex-shrink: 0;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-pill);
+    padding: 6px 6px 6px 16px;
+    transition: border-color 0.15s;
+  }
+
+  .input-row:focus-within {
+    border-color: var(--teal-500);
+    background: white;
+  }
+
+  #msg-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--gray-900);
+    resize: none;
+    max-height: 80px;
+    line-height: 1.5;
+  }
+
+  #msg-input::placeholder { color: var(--gray-400); }
+
+  .send-btn {
+    width: 36px;
+    height: 36px;
+    background: var(--teal-700);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  .send-btn:hover { background: var(--teal-500); }
+  .send-btn:active { transform: scale(0.94); }
+  .send-btn:disabled { background: var(--gray-200); cursor: not-allowed; }
+
+  .send-btn svg { width: 17px; height: 17px; fill: white; }
+
+  .input-footer {
+    display: flex;
+    justify-content: center;
+    margin-top: 9px;
+  }
+
+  .powered-by {
+    font-size: 11px;
+    color: var(--gray-400);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .powered-by span { color: var(--teal-700); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="chat-shell">
+
+  <div class="chat-header">
+    <div class="clinic-logo">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 13v-4H8l4-6v4h3l-4 6z"/>
+      </svg>
+    </div>
+    <div class="header-info">
+      <div class="clinic-name">Clinique Al Amal</div>
+      <div class="clinic-status">
+        <div class="status-dot"></div>
+        <span class="status-text">Assistant disponible</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-messages" id="messages">
+    <div class="welcome-card">
+      <p><strong>Bonjour, bienvenue à Clinique Al Amal.</strong><br>
+      Je suis votre assistant IA. Je peux vous aider avec nos horaires, tarifs, services, et la prise de rendez-vous.</p>
+      <div class="quick-actions">
+        <button class="quick-btn" onclick="sendQuick('What are your opening hours?')">Horaires</button>
+        <button class="quick-btn" onclick="sendQuick('What are your consultation fees?')">Tarifs</button>
+        <button class="quick-btn" onclick="sendQuick('I would like to book an appointment')">Rendez-vous</button>
+        <button class="quick-btn" onclick="sendQuick('What services do you offer?')">Services</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-input-area">
+    <div class="input-row">
+      <textarea id="msg-input" rows="1" placeholder="Écrivez votre message..." maxlength="500"></textarea>
+      <button class="send-btn" id="send-btn" onclick="sendMessage()">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+    <div class="input-footer">
+      <div class="powered-by">Propulsé par <span>IA · Clinique Al Amal</span></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── CONFIG ─────────────────────────────────────────────────────────────
+// Change this to your Railway URL after deployment, e.g.:
+// const API_URL = 'https://your-app.up.railway.app/chat';
+const API_URL = 'http://localhost:8000/chat';
+// ────────────────────────────────────────────────────────────────────────
+
+const messagesEl = document.getElementById('messages');
+const inputEl = document.getElementById('msg-input');
+const sendBtn = document.getElementById('send-btn');
+let history = [];
+let isLoading = false;
+
+function getTime() {
+  return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function addMessage(text, role) {
+  const row = document.createElement('div');
+  row.className = `msg-row ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = `avatar ${role === 'assistant' ? 'bot' : 'user-av'}`;
+  avatar.textContent = role === 'assistant' ? 'AI' : 'P';
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'msg-wrapper';
+
+  const bubble = document.createElement('div');
+  bubble.className = `bubble ${role === 'assistant' ? 'bot' : 'user'}`;
+  bubble.textContent = text;
+
+  const time = document.createElement('div');
+  time.className = 'msg-time';
+  time.textContent = getTime();
+
+  wrapper.appendChild(bubble);
+  wrapper.appendChild(time);
+  row.appendChild(avatar);
+  row.appendChild(wrapper);
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function showTyping() {
+  const row = document.createElement('div');
+  row.className = 'typing-indicator';
+  row.id = 'typing';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar bot';
+  avatar.textContent = 'AI';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'typing-bubble';
+  bubble.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function hideTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+async function sendMessage() {
+  const text = inputEl.value.trim();
+  if (!text || isLoading) return;
+
+  inputEl.value = '';
+  inputEl.style.height = 'auto';
+  isLoading = true;
+  sendBtn.disabled = true;
+
+  addMessage(text, 'user');
+  showTyping();
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, history, session_id: 'widget-session' })
+    });
+
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+
+    hideTyping();
+    addMessage(data.reply, 'assistant');
+    history.push({ role: 'user', content: text });
+    history.push({ role: 'assistant', content: data.reply });
+    if (history.length > 20) history = history.slice(-20);
+
+  } catch (err) {
+    hideTyping();
+    addMessage("Une erreur s'est produite. Veuillez réessayer ou appeler le +216 71 000 000.", 'assistant');
+  }
+
+  isLoading = false;
+  sendBtn.disabled = false;
+  inputEl.focus();
+}
+
+function sendQuick(text) {
+  inputEl.value = text;
+  sendMessage();
+}
+
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+inputEl.addEventListener('input', () => {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 80) + 'px';
+});
+</script>
+</body>
+</html>
